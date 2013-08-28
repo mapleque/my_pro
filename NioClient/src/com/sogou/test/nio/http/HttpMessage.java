@@ -2,6 +2,11 @@ package com.sogou.test.nio.http;
 
 import java.nio.ByteBuffer;
 
+/**
+ * 
+ * @author yangyang@sogou-inc.com
+ * 
+ */
 public abstract class HttpMessage {
 
 	static protected final String STRING_CRLF = "\r\n";

@@ -19,164 +19,208 @@ import com.sogou.test.nio.http.HttpCodecFactory;
 import com.sogou.test.nio.http.HttpRequestMessage;
 import com.sogou.test.nio.http.HttpResponseMessage;
 
-public class SelectSoketsClientThreadPool extends Thread{
+public class SelectSoketsClientThreadPool extends Thread {
 
+	// default parameter
+	// --------------------------------------
 	protected static int PORT = 5555;
-	protected static String IP = "10.12.18.196";
+	protected static String IP = "0.0.0.0";
 	protected static int COMPLICATE = 5;
-	protected static int REQUEST=100;
-	protected static String SENT_CONTENT = "http://baike.baidu.com/view/24982.htm?fromId=489499";
-	protected static String SENT_URL="/";
-	protected static String METHOD="post";
-	
-	private static int sentNum=0;
-	protected static boolean finishFlag=false;
-	
-	/******** The result record **********/
-	public static int[] result;
-	public static final int TOTAL = 0;
-	public static final int THREAD = 1;
-	public static final int SENT = 2;
-	public static final int SUCCESS = 3;
-	public static final int FAIL = 4;
-	/******** The result record end *******/
+	protected static int REQUEST = 100;
+	protected static String SENT_CONTENT = "http://baike.baidu.com/view/24982.htm";
+	protected static String SENT_URL = "/";
+	protected static String METHOD = "post";
+	// --------------------------------------
 
-	private SocketAddress socketAddress = null;
-//	private List<SocketChannel> channelList=new ArrayList<SocketChannel>();
+	protected static boolean finishFlag = false;// finish flag
+
+	// The result record
+	// ---------------------------------------
+	public static int[] result;// result record space
+	public static final int TOTAL = 0;// total request number
+	public static final int THREAD = 1;// complicate number
+	public static final int SENT = 2;// sent request number
+	public static final int SUCCESS = 3;// success response number
+	public static final int FAIL = 4;// fail response number
+	// ---------------------------------------
+
+	private static int sentNum = 0;// sent number
+	private SocketAddress socketAddress = null;// socket address
 
 	public static void main(String[] argv) {
 		new SelectSoketsClientThreadPool().start();
 	}
-	
+
+	@Override
 	public void run() {
+		// initial result space
+		// --------------------------
 		result = new int[5];
 		result[TOTAL] = REQUEST;
 		result[THREAD] = COMPLICATE;
 		result[SENT] = 0;
 		result[SUCCESS] = 0;
 		result[FAIL] = 0;
-		
+		// --------------------------
+
 		try {
+			// initial client socket channel
+			// ------------------------------------------------------
 			socketAddress = new InetSocketAddress(IP, PORT);
 			Selector selector = Selector.open();
-
-			for (int i=0;i<COMPLICATE;i++){
+			for (int i = 0; i < COMPLICATE; i++) {
 				SocketChannel socketChannel = SocketChannel.open();
 				socketChannel.socket().setReuseAddress(true);
 				socketChannel.connect(socketAddress);
 				socketChannel.configureBlocking(false);
 				socketChannel.register(selector, SelectionKey.OP_READ);
-				
-//				channelList.add(socketChannel);
+				// start sending
 				sendMessage(socketChannel);
 			}
-			
+			// ------------------------------------------------------
 
+			// start selector
+			// ------------------------------------------------------
 			while (true) {
 				int n = selector.select();
 				if (n == 0) {
-					System.out.println("no selector remain");
 					continue;
 				}
 				Iterator<SelectionKey> it = selector.selectedKeys().iterator();
 				while (it.hasNext()) {
 					SelectionKey key = it.next();
 					if (key.isReadable()) {
-						onRecieved(key);
-						sendMessage(key);
+						// dealing when receive data
+						onReceived(key);// read response
+						sendMessage(key);// send request
 					}
 					it.remove();
 				}
 			}
+			// ------------------------------------------------------
 		} catch (Exception e) {
 			e.printStackTrace();
 			System.exit(2);
 		}
 	}
-	
-//	protected void startSend() throws Exception{
-//		for (SocketChannel socketChannel:channelList){
-//			sendMessage(socketChannel);
-//		}
-//	}
-	
-	protected void onRecieved(SelectionKey key) throws Exception {
+
+	/**
+	 * Read a HTTP response
+	 * 
+	 * @param key
+	 *            socket channel key
+	 */
+	protected void onReceived(SelectionKey key) throws Exception {
 		SocketChannel socketChannel = (SocketChannel) key.channel();
-		HttpCodecFactory httpFactory=new HttpCodecFactory();
-		HttpResponseMessage response=httpFactory.readResponse(socketChannel);
-		if (isCorrectReplay(response)){
+		
+		HttpCodecFactory httpFactory = new HttpCodecFactory();
+		//decode data into a HTTP response entity
+		HttpResponseMessage response = httpFactory.readResponse(socketChannel);
+		
+		//result checking
+		if (isCorrectReplay(response)) {
 			result[SUCCESS]++;
-		}else{
+		} else {
 			result[FAIL]++;
 		}
 	}
-	
-	protected void sendMessage(SocketChannel socketChannel)throws Exception{
-		if (sentNum>=REQUEST){
-			finishFlag=true;
+
+	/**
+	 * Send a HTTP request if not finished
+	 */
+	protected void sendMessage(SocketChannel socketChannel) throws Exception {
+		if (sentNum >= REQUEST) {
+			finishFlag = true;
 			return;
 		}
-			
+		
+		//build a HTTP request
 		HttpRequestMessage mess;
 		if ("get".equals(METHOD))
-			mess=new HttpRequestMessage(HttpRequestMessage.HttpMethod.GET,SENT_URL);
+			mess = new HttpRequestMessage(HttpRequestMessage.HttpMethod.GET,
+					SENT_URL);
 		else
-			mess=new HttpRequestMessage(HttpRequestMessage.HttpMethod.POST,SENT_URL);
+			mess = new HttpRequestMessage(HttpRequestMessage.HttpMethod.POST,
+					SENT_URL);
 		mess.setHeader("charset", "utf-8");
 		mess.setParameters("url", getUrlParam());
-		HttpCodecFactory httpFactory=new HttpCodecFactory();
+		HttpCodecFactory httpFactory = new HttpCodecFactory();
+		//encode HTTP request and send
 		httpFactory.sendRequest(socketChannel, mess);
+		
 		result[SENT]++;
 		sentNum++;
 	}
-	
-	protected void sendMessage(SelectionKey key) throws Exception{
+
+	/**
+	 * Send a HTTP request if not finished
+	 * 
+	 * @param key
+	 *            socket channel key
+	 */
+	protected void sendMessage(SelectionKey key) throws Exception {
 		SocketChannel socketChannel = (SocketChannel) key.channel();
 		sendMessage(socketChannel);
 	}
-	
-	protected boolean isCorrectReplay(HttpResponseMessage response){
-		if (response==null||!response.isSucceeded()){
+
+	/**
+	 * HTTP Response checking method.
+	 * @param response
+	 * HTTP response message
+	 * @return
+	 * Only match the pattern "{@code <scene>(.*?)</scene>}" will be true.
+	 */
+	protected boolean isCorrectReplay(HttpResponseMessage response) {
+		if (response == null || !response.isSucceeded()) {
+			//null or without succeeded flag is false
 			System.err.println("unkown response");
 			return false;
 		}
-		String xml=String.valueOf(response.getReplyContentRecved());
-//		System.err.println(xml);
-		Pattern pattern = Pattern
-				.compile("<scene>(.*?)</scene>");
+		
+		//content match
+		String xml = String.valueOf(response.getReplyContentRecved());
+		Pattern pattern = Pattern.compile("<scene>(.*?)</scene>");
 		Matcher matcher = pattern.matcher(xml);
-		if (matcher.find()){
-//			System.err.println(matcher.group());
-//			System.err.println(matcher.group(1));
+		if (matcher.find()) {
+			//match is true
 			return true;
 		}
+		
+		//not match is false
 		System.err.println(xml);
 		return false;
 	}
-	
-	private static BufferedReader in = null;//URL parameter file reader
+
+	private static BufferedReader in = null;// URL parameter file reader
+
 	/**
 	 * Get URL parameter from file
+	 * 
 	 * @return
 	 */
 	public static String getUrlParam() {
 		File file = new File(SENT_CONTENT);
-		if (!file.exists())
+		if (!file.exists())//not a file
 			return SENT_CONTENT;
 		else {
 			String line = null;
 			try {
+				//open a stream reader
 				if (in == null) {
 					in = new BufferedReader(new InputStreamReader(
 							new FileInputStream(file)));
 				}
+				
+				//open a new stream reader when EOF
 				if ((line = in.readLine()) == null) {
 					in.close();
 					in = new BufferedReader(new InputStreamReader(
 							new FileInputStream(file)));
+					//read a line of the file
 					line = in.readLine();
 				}
-				if (line == null)
+				
+				if (line == null)//error read
 					line = SENT_CONTENT;
 				return line;
 			} catch (FileNotFoundException e) {
@@ -187,5 +231,5 @@ public class SelectSoketsClientThreadPool extends Thread{
 			return SENT_CONTENT;
 		}
 	}
-	
+
 }

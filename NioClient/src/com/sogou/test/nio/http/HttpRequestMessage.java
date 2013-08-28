@@ -10,19 +10,23 @@ import java.util.Map;
 
 import org.apache.commons.lang.StringUtils;
 
+/**
+ * 
+ * @author yangyang@sogou-inc.com
+ * 
+ */
 public class HttpRequestMessage extends HttpMessage {
 
 	static protected final byte[] BYTES_GET = "GET".getBytes();
 	static protected final byte[] BYTES_POST = "POST".getBytes();
 
 	static public enum HttpMethod {
-		GET,
-		POST;
+		GET, POST;
 	}
 
 	protected HttpMethod method;
 	protected String url;
-//	protected String protocol;
+	// protected String protocol;
 	protected HashMap<String, String> headers = new HashMap<String, String>();
 	protected HashMap<String, String> parameters = new HashMap<String, String>();
 
@@ -32,7 +36,7 @@ public class HttpRequestMessage extends HttpMessage {
 	public HttpRequestMessage(HttpMethod method, String url) {
 		this.method = method;
 		this.url = url;
-//    	this.protocol = "HTTP/1.1";
+		// this.protocol = "HTTP/1.1";
 		this.setHeader("Host", "127.0.0.1"); // necessary data in HTTP/1.1
 	}
 
@@ -62,8 +66,8 @@ public class HttpRequestMessage extends HttpMessage {
 			StringBuilder content = new StringBuilder(2048);
 			for (Map.Entry<String, String> e : this.parameters.entrySet()) {
 				if (e.getValue() != null)
-					content.append(e.getKey()).append('=').append(
-							urlEncodeUtf16le(e.getValue())).append('&');
+					content.append(e.getKey()).append('=')
+							.append(urlEncodeUtf16le(e.getValue())).append('&');
 			}
 			if (this.parameters.size() > 0)
 				content.deleteCharAt(content.length() - 1);
@@ -74,35 +78,35 @@ public class HttpRequestMessage extends HttpMessage {
 				// set content type: utf-16le
 				this.setHeader(STRING_CONTENTTYPE, STRING_CONTENTTYPE_VALUE);
 
-				str.append(method.toString()).append(' ').append(url).append(
-						content.toString()).append(" HTTP/1.1").append(
-						STRING_CRLF);
+				str.append(method.toString()).append(' ').append(url)
+						.append(content.toString()).append(" HTTP/1.1")
+						.append(STRING_CRLF);
 				for (Map.Entry<String, String> e : this.headers.entrySet()) {
-					str.append(e.getKey()).append(": ").append(e.getValue()).append(
-							STRING_CRLF);
+					str.append(e.getKey()).append(": ").append(e.getValue())
+							.append(STRING_CRLF);
 				}
-				
-				//str.append(STRING_CRLF).append(STRING_CRLF);
-				//yangyang:here should end with only one CRLF
+
+				// str.append(STRING_CRLF).append(STRING_CRLF);
+				// yangyang:here should end with only one CRLF
 				str.append(STRING_CRLF);
 				outputMessage = str.toString();
 				break;
 
 			case POST:
 				// add LRCF size: 2
-				//yangyang:the content end have no CRLF here,why + 2? 
-				//this.setHeader(STRING_CONTENTLENGTH,
-				//		Integer.toString(content.length() + 2));
+				// yangyang:the content end have no CRLF here,why + 2?
+				// this.setHeader(STRING_CONTENTLENGTH,
+				// Integer.toString(content.length() + 2));
 				this.setHeader(STRING_CONTENTLENGTH,
 						Integer.toString(content.length()));
 				// set content type: utf-16le
 				this.setHeader(STRING_CONTENTTYPE, STRING_CONTENTTYPE_VALUE);
 
-				str.append(method.toString()).append(' ').append(url).append(
-						" HTTP/1.1").append(STRING_CRLF);
+				str.append(method.toString()).append(' ').append(url)
+						.append(" HTTP/1.1").append(STRING_CRLF);
 				for (Map.Entry<String, String> e : this.headers.entrySet()) {
-					str.append(e.getKey()).append(": ").append(e.getValue()).append(
-							STRING_CRLF);
+					str.append(e.getKey()).append(": ").append(e.getValue())
+							.append(STRING_CRLF);
 				}
 				str.append(STRING_CRLF);
 				str.append(content.toString());
@@ -177,8 +181,8 @@ public class HttpRequestMessage extends HttpMessage {
 								URLDecoder.decode(param[1].trim(), "GBK"));
 				}
 			}
-//			LoggerHelper.appPrint(LoggerHelper.TRACE, message,
-//					"decode message is : " + message);
+			// LoggerHelper.appPrint(LoggerHelper.TRACE, message,
+			// "decode message is : " + message);
 			return message;
 		} else if (findByteArray(in, 0, 2, BYTES_GET) == 0) {
 			// GET METHOD
@@ -195,15 +199,15 @@ public class HttpRequestMessage extends HttpMessage {
 			String[] tokens = StringUtils.split(line, ' ');
 			if (tokens.length < 3)
 				return null;
-			
+
 			// create instance
-			HttpRequestMessage message = new HttpRequestMessage(
-					HttpMethod.GET, tokens[1]);
+			HttpRequestMessage message = new HttpRequestMessage(HttpMethod.GET,
+					tokens[1]);
 
 			// parameter
 			int idx = tokens[1].lastIndexOf("?");
-			if(idx > 0) {
-				line = tokens[1].substring(idx+1);
+			if (idx > 0) {
+				line = tokens[1].substring(idx + 1);
 				tokens = StringUtils.split(line, '&');
 				for (int i = 0; i < tokens.length; i++) {
 					String[] param = StringUtils.split(tokens[i], '=');
@@ -240,7 +244,7 @@ public class HttpRequestMessage extends HttpMessage {
 				message.setHeader(tokens[0].trim(), tokens[1].trim());
 				line = reader.readLine();
 			}
-			
+
 			return message;
 		} else
 			throw new IllegalStateException();

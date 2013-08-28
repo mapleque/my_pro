@@ -2,7 +2,12 @@ package com.sogou.test.nio.http;
 
 import java.nio.ByteBuffer;
 
-public class HttpRequestDecoder{
+/**
+ * 
+ * @author yangyang@sogou-inc.com
+ * 
+ */
+public class HttpRequestDecoder {
 
 	public boolean decodable(ByteBuffer in) {
 		// Return NEED_DATA if the whole header is not read yet.
@@ -21,5 +26,4 @@ public class HttpRequestDecoder{
 		return message;
 	}
 
-	
 }

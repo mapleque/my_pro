@@ -8,6 +8,11 @@ import java.util.*;
 
 import org.apache.commons.lang.StringUtils;
 
+/**
+ * 
+ * @author yangyang@sogou-inc.com
+ * 
+ */
 public class HttpResponseMessage extends HttpMessage {
 
 	static public enum HttpStatus {
