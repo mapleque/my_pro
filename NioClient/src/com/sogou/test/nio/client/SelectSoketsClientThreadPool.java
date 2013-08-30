@@ -89,12 +89,11 @@ public class SelectSoketsClientThreadPool extends Thread {
 				Iterator<SelectionKey> it = selector.selectedKeys().iterator();
 				while (it.hasNext()) {
 					SelectionKey key = it.next();
+					it.remove();
 					if (key.isReadable()) {
 						// dealing when receive data
 						onReceived(key);// read response
-						sendMessage(key);// send request
 					}
-					it.remove();
 				}
 			}
 			// ------------------------------------------------------
@@ -123,6 +122,7 @@ public class SelectSoketsClientThreadPool extends Thread {
 		} else {
 			result[FAIL]++;
 		}
+		sendMessage(key);// send request
 	}
 
 	/**
@@ -142,7 +142,7 @@ public class SelectSoketsClientThreadPool extends Thread {
 		else
 			mess = new HttpRequestMessage(HttpRequestMessage.HttpMethod.POST,
 					SENT_URL);
-		mess.setHeader("charset", "utf-8");
+		mess.setHeader("charset", "UTF-16LE");
 		mess.setParameters("url", getUrlParam());
 		HttpCodecFactory httpFactory = new HttpCodecFactory();
 		//encode HTTP request and send
@@ -170,10 +170,12 @@ public class SelectSoketsClientThreadPool extends Thread {
 	 * @return
 	 * Only match the pattern "{@code <scene>(.*?)</scene>}" will be true.
 	 */
+	private static int respNum=0;
 	protected boolean isCorrectReplay(HttpResponseMessage response) {
+		respNum++;
 		if (response == null || !response.isSucceeded()) {
 			//null or without succeeded flag is false
-			System.err.println("unkown response");
+			System.err.println(respNum+":response time out!");
 			return false;
 		}
 		
@@ -183,11 +185,12 @@ public class SelectSoketsClientThreadPool extends Thread {
 		Matcher matcher = pattern.matcher(xml);
 		if (matcher.find()) {
 			//match is true
+			//System.out.println(respNum+":"+xml);
 			return true;
 		}
 		
 		//not match is false
-		System.err.println(xml);
+		System.err.println(respNum+":"+xml);
 		return false;
 	}
 

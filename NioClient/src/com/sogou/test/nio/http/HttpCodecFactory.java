@@ -13,6 +13,7 @@ import java.util.List;
  */
 public class HttpCodecFactory {
 
+	private final static long TIMEOUT=5000;
 	private ByteBuffer buffer = ByteBuffer.allocateDirect(1024);
 
 	/**
@@ -64,7 +65,17 @@ public class HttpCodecFactory {
 		int count = 0;
 		buffer.clear();
 		List<byte[]> buffer_list = new ArrayList<byte[]>();
-		while ((count = socketChannel.read(buffer)) > 0) {
+		long startTime=System.currentTimeMillis();
+		while ((count = socketChannel.read(buffer)) >=0) {
+			if (count==0){
+				//wait for time out
+				long curTime=System.currentTimeMillis();
+				if (curTime-startTime>TIMEOUT)
+					return null;
+				buffer.flip();
+				buffer.clear();
+				continue;
+			}
 			ByteBuffer cur_buffer = ByteBuffer.allocateDirect((buffer_list
 					.size() + 1) * 1024);
 			byte[] dst;
@@ -74,6 +85,7 @@ public class HttpCodecFactory {
 			dst = new byte[buffer.position()];
 			buffer.flip();
 			buffer.get(dst);
+			//System.out.println(new String(dst,"UTF-16LE"));
 			cur_buffer.put(dst);
 			cur_buffer.flip();
 			if ((decoder.decodable(cur_buffer))) {
@@ -88,6 +100,7 @@ public class HttpCodecFactory {
 		}
 		if (count < 0) {
 			socketChannel.close();
+			System.err.println("channel close");
 			return null;
 		}
 		return null;
