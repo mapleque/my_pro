@@ -1,4 +1,4 @@
-package com.sogou.test.nio.client;
+package com.sogou.test.nio.SimpleClient;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -12,8 +12,6 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.util.Iterator;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import com.sogou.test.nio.http.HttpCodecFactory;
 import com.sogou.test.nio.http.HttpRequestMessage;
@@ -23,13 +21,13 @@ public class SelectSoketsClientThreadPool extends Thread {
 
 	// default parameter
 	// --------------------------------------
-	protected static int PORT = 5555;
+	protected static int PORT = 80;
 	protected static String IP = "0.0.0.0";
-	protected static int COMPLICATE = 5;
-	protected static int REQUEST = 100;
-	protected static String SENT_CONTENT = "http://baike.baidu.com/view/24982.htm";
+	protected static int COMPLICATE = 1;
+	protected static int REQUEST = 1;
+	protected static String SENT_CONTENT = "hello";
 	protected static String SENT_URL = "/";
-	protected static String METHOD = "post";
+	protected static String METHOD = "get";
 	// --------------------------------------
 
 	protected static boolean finishFlag = false;// finish flag
@@ -136,14 +134,14 @@ public class SelectSoketsClientThreadPool extends Thread {
 		
 		//build a HTTP request
 		HttpRequestMessage mess;
-		if ("get".equals(METHOD))
+		if (!"post".equals(METHOD))
 			mess = new HttpRequestMessage(HttpRequestMessage.HttpMethod.GET,
 					SENT_URL);
 		else
 			mess = new HttpRequestMessage(HttpRequestMessage.HttpMethod.POST,
 					SENT_URL);
-		mess.setHeader("charset", "UTF-16LE");
-		mess.setParameters("url", getUrlParam());
+		mess.setHeader("charset", "UTF-8");
+		mess.setParameters("name", getUrlParam());
 		HttpCodecFactory httpFactory = new HttpCodecFactory();
 		//encode HTTP request and send
 		httpFactory.sendRequest(socketChannel, mess);
@@ -173,9 +171,7 @@ public class SelectSoketsClientThreadPool extends Thread {
 	private static int respNum=0;
 	protected boolean isCorrectReplay(HttpResponseMessage response) {
 		respNum++;
-		if (response == null || !response.isSucceeded()) {
-			//null or without succeeded flag is false
-//			System.err.println(respNum+":response time out!");
+		if (response == null) {
 			return false;
 		}
 		
@@ -184,17 +180,7 @@ public class SelectSoketsClientThreadPool extends Thread {
 		
 		System.err.println(respNum+":"+xml);
 		
-		Pattern pattern = Pattern.compile("<scene>(.*?)</scene>");
-		Matcher matcher = pattern.matcher(xml);
-		if (matcher.find()) {
-			//match is true
-			//System.out.println(respNum+":"+xml);
-			return true;
-		}
-		
-		//not match is false
-//		System.err.println(respNum+":"+xml);
-		return false;
+		return true;
 	}
 
 	private static BufferedReader in = null;// URL parameter file reader

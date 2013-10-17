@@ -107,6 +107,7 @@ public class HttpResponseMessage extends HttpMessage {
 
 	static protected HttpResponseMessage decodeMessage(ByteBuffer in)
 			throws Exception {
+		in.position(0);
 		int headerSize = -1, contentSize = 0;
 		// find a empty line
 		if ((headerSize = findByteArray(in, BYTES_CRLFCRLF)) < 0)
