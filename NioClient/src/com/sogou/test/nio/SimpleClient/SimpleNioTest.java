@@ -9,6 +9,7 @@ package com.sogou.test.nio.SimpleClient;
 public class SimpleNioTest extends SelectSoketsClientThreadPool {
 
 	public static void main(String[] args) {
+		args="-a 10.12.18.192 -p 80 -u /test/timeout10.jsp".split(" ");
 		// read args
 		dealArgs(args);
 		// echo parameter

@@ -23,13 +23,13 @@ public class SelectSoketsClientThreadPool extends Thread {
 
 	// default parameter
 	// --------------------------------------
-	protected static int PORT = 5555;
-	protected static String IP = "0.0.0.0";
-	protected static int COMPLICATE = 5;
-	protected static int REQUEST = 100;
+	protected static int PORT = 8080;
+	protected static String IP = "10.12.13.193";
+	protected static int COMPLICATE = 1;
+	protected static int REQUEST = 1;
 	protected static String SENT_CONTENT = "http://baike.baidu.com/view/24982.htm";
-	protected static String SENT_URL = "/";
-	protected static String METHOD = "post";
+	protected static String SENT_URL = "/?";
+	protected static String METHOD = "get";
 	// --------------------------------------
 
 	protected static boolean finishFlag = false;// finish flag
