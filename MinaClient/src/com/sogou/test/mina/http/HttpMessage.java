@@ -10,14 +10,18 @@ public abstract class HttpMessage {
 	static protected final String STRING_CRLFCRLF = "\r\n\r\n";
 	static protected final byte[] BYTES_CRLFCRLF = STRING_CRLFCRLF.getBytes();
 	static protected final String STRING_CONTENTLENGTH = "Content-Length";
-	static protected final byte[] BYTES_CONTENTLENGTH = STRING_CONTENTLENGTH.getBytes();
+	static protected final byte[] BYTES_CONTENTLENGTH = STRING_CONTENTLENGTH
+			.getBytes();
+	static protected final String STRING_CHUNKED = "chunked";
+	static protected final byte[] BYTES_CHUNKED = STRING_CHUNKED.getBytes();
+
 	static protected final String STRING_CONTENTTYPE = "Content-Type";
 	static protected final String STRING_CONTENTTYPE_VALUE = "application/x-www-form-urlencoded;charset=UTF-16LE";
 	static protected final String STRING_CONTENTTYPE_UTF8VALUE = "application/x-www-form-urlencoded;charset=UTF-8";
 	static protected final String STRING_CONTENTTYPE_GBKVALUE = "application/x-www-form-urlencoded;charset=GBK";
 	static protected final String STRING_CONTENTTYPE_GB18030VALUE = "application/x-www-form-urlencoded;charset=GB18030";
 
-	static protected int findByteArray( IoBuffer buffer, byte[] array ) {
+	static protected int findByteArray(IoBuffer buffer, byte[] array) {
 		return findByteArray(buffer, 0, buffer.remaining() - 1, array);
 	}
 
@@ -93,6 +97,9 @@ public abstract class HttpMessage {
 	static public final String SESSION_ATTR_HEADERSIZE = "http.HeaderSize";
 	static public final String SESSION_ATTR_CONTENTSIZE = "http.ContentSize";
 
+	static public final String SESSION_ATTR_CHUNKEDTYPE = "http.ChunkedType";
+	static public final String SESSION_ATTR_CHUNKEDCONTENT = "http.ChunkedContent";
+
 	/**
 	 * 
 	 * @param session
@@ -118,33 +125,100 @@ public abstract class HttpMessage {
 		} else
 			headerSize = (Integer) obj;
 
-		obj = session.getAttribute(SESSION_ATTR_CONTENTSIZE);
+		// chunked flag
+		obj = session.getAttribute(SESSION_ATTR_CHUNKEDTYPE);
+		boolean trunckedResponse = false;
 		if (obj == null) {
-			int contentLengthStart, contentLengthEnd;
-			// find Content-Length
-			if ((contentLengthStart = findByteArray(in, 0, headerSize,
-					BYTES_CONTENTLENGTH)) < 0)
+			if (findByteArray(in, 0, headerSize, BYTES_CHUNKED) > 0) {
+				trunckedResponse = true;
+			} else {
+				trunckedResponse = false;
+			}
+			session.setAttribute(SESSION_ATTR_CHUNKEDTYPE, trunckedResponse);
+		} else {
+			trunckedResponse = (Boolean) obj;
+		}
+
+		if (trunckedResponse) {// chunked response
+			// [chunked-size][CRLF][chunked-body][CRLF]...[0][CRLF][""][CRLF]
+			// TODO:can be optimize with session
+			int chunkedSize, chunkedSizeStart, chunkedSizeEnd, chunkedContentStart;
+			int contentStart;
+			contentStart = chunkedSizeStart = headerSize + 2;
+			if ((chunkedSizeEnd = findByteArray(in, chunkedSizeStart,
+					in.limit() - 1, BYTES_CRLF)) < 0)
 				return false;
-			if ((contentLengthEnd = findByteArray(in, contentLengthStart,
-					headerSize, BYTES_CRLF)) < 0)
-				return false;
-			// get Content-Length string
-			int start = contentLengthStart + BYTES_CONTENTLENGTH.length + 1;
-			int length = contentLengthEnd - contentLengthStart
-					- BYTES_CONTENTLENGTH.length;
-			in.position(start);
+			int length = chunkedSizeEnd - chunkedSizeStart;
+			chunkedContentStart = chunkedSizeEnd + 2;
+			in.position(chunkedSizeStart);
 			byte[] bytes = new byte[length];
 			in.get(bytes, 0, length);
 			String stringContentLength = new String(bytes);
-			// parse string, remove : and blank space
-			contentSize = Integer.parseInt(stringContentLength.trim());
-			session.setAttribute(SESSION_ATTR_CONTENTSIZE, contentSize);
-		} else
-			contentSize = (Integer) obj;
+			chunkedSize = Integer.parseInt(stringContentLength.trim(), 16);
 
-		if (headerSize + 2 + contentSize == receivedSize)
-			return true;
-		else
-			return false;
+			String chunkedContent = "";
+			while (chunkedSize > 0) {
+				// read trunked content
+				in.position(chunkedContentStart);
+				if (in.remaining() < chunkedSize + 2)
+					return false;
+				bytes = new byte[chunkedSize];
+				in.get(bytes, 0, chunkedSize);
+				chunkedContent += new String(bytes);
+
+				// read next chunked size
+				chunkedSizeStart = chunkedContentStart + chunkedSize + 2;
+				in.position(0);
+				if ((chunkedSizeEnd = findByteArray(in, chunkedSizeStart,
+						in.limit() - 1, BYTES_CRLF)) < 0)
+					return false;
+				in.position(chunkedSizeStart);
+				length = chunkedSizeEnd - chunkedSizeStart;
+				chunkedContentStart = chunkedSizeEnd + 2;
+				bytes = new byte[length];
+				in.get(bytes, 0, length);
+				stringContentLength = new String(bytes);
+				chunkedSize = Integer.parseInt(stringContentLength.trim(), 16);
+			}
+			int contentEnd = chunkedContentStart + 2;
+			contentSize = contentEnd - contentStart;
+			session.setAttribute(SESSION_ATTR_CHUNKEDCONTENT, chunkedContent);
+			session.setAttribute(SESSION_ATTR_CONTENTSIZE, contentSize);
+			if (headerSize + 2 + contentSize == receivedSize) {
+				return true;
+			} else {
+				return false;
+			}
+		} else {// Content-Length response
+
+			obj = session.getAttribute(SESSION_ATTR_CONTENTSIZE);
+			if (obj == null) {
+				int contentLengthStart, contentLengthEnd;
+				// find Content-Length
+				if ((contentLengthStart = findByteArray(in, 0, headerSize,
+						BYTES_CONTENTLENGTH)) < 0)
+					return false;
+				if ((contentLengthEnd = findByteArray(in, contentLengthStart,
+						headerSize, BYTES_CRLF)) < 0)
+					return false;
+				// get Content-Length string
+				int start = contentLengthStart + BYTES_CONTENTLENGTH.length + 1;
+				int length = contentLengthEnd - contentLengthStart
+						- BYTES_CONTENTLENGTH.length;
+				in.position(start);
+				byte[] bytes = new byte[length];
+				in.get(bytes, 0, length);
+				String stringContentLength = new String(bytes);
+				// parse string, remove : and blank space
+				contentSize = Integer.parseInt(stringContentLength.trim());
+				session.setAttribute(SESSION_ATTR_CONTENTSIZE, contentSize);
+			} else
+				contentSize = (Integer) obj;
+
+			if (headerSize + 2 + contentSize == receivedSize)
+				return true;
+			else
+				return false;
+		}
 	}
 }

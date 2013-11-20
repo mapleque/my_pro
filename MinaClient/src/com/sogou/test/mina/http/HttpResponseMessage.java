@@ -17,10 +17,8 @@ public class HttpResponseMessage extends HttpMessage {
 	public String encodeType = "UTF8";
 
 	static public enum HttpStatus {
-		Success(200, "OK"),
-		NotFound(404, "Not Found"), 
-		Unauthorized(401,"Unauthorized"), 
-		NotAllow(405, "Method Not Allow");
+		Success(200, "OK"), NotFound(404, "Not Found"), Unauthorized(401,
+				"Unauthorized"), NotAllow(405, "Method Not Allow");
 		private int retCode;
 		private String description;
 
@@ -64,6 +62,10 @@ public class HttpResponseMessage extends HttpMessage {
 	public void setHeader(String name, String value) {
 		isChanged = true;
 		headers.put(name, value);
+	}
+
+	public HashMap<String, String> getHeader() {
+		return headers;
 	}
 
 	public String getHeader(String name) {
@@ -113,7 +115,8 @@ public class HttpResponseMessage extends HttpMessage {
 	}
 
 	static protected HttpResponseMessage decodeMessage(IoBuffer in,
-			int headerSize, int contentSize) throws Exception {
+			int headerSize, int contentSize, boolean chunked,
+			String chunkedContent) throws Exception {
 		// get Header
 		byte[] headerData = new byte[headerSize];
 		in.get(headerData, 0, headerSize);
@@ -138,8 +141,8 @@ public class HttpResponseMessage extends HttpMessage {
 		else if (tokens[1].equals(Integer
 				.toString(HttpStatus.Unauthorized.retCode)))
 			status = HttpStatus.Unauthorized;
-		else if (tokens[1].equals(Integer
-				.toString(HttpStatus.NotAllow.retCode)))
+		else if (tokens[1]
+				.equals(Integer.toString(HttpStatus.NotAllow.retCode)))
 			status = HttpStatus.NotAllow;
 		else
 			throw new IllegalStateException();
@@ -161,28 +164,31 @@ public class HttpResponseMessage extends HttpMessage {
 			}
 			line = reader.readLine();
 		}
-
-		if (contentSize > 0) {
-			if ("GBK".equals(message.encodeType)
-					|| "UTF8".equals(message.encodeType)
-					|| "GB18030".equals(message.encodeType)) {
-				in.position(headerSize + 2);
-				in.order(ByteOrder.LITTLE_ENDIAN);
-				// CharBuffer buffer = in.asCharBuffer();
-				Charset charset = null;
-				CharsetDecoder decoder = null;
-				charset = Charset.forName(message.encodeType);
-				decoder = charset.newDecoder();
-				String content = in.getString(decoder);
-				message.contentRecved = content.toCharArray();
-			} else {
-				// copy content
-				in.position(headerSize + 2);
-				in.order(ByteOrder.LITTLE_ENDIAN);
-				CharBuffer buffer = in.asCharBuffer();
-				char[] data = new char[contentSize / 2];
-				buffer.get(data, 0, contentSize / 2);
-				message.contentRecved = data;
+		if (chunked) {
+			message.contentRecved = chunkedContent.toCharArray();
+		} else {
+			if (contentSize > 0) {
+				if ("GBK".equals(message.encodeType)
+						|| "UTF8".equals(message.encodeType)
+						|| "GB18030".equals(message.encodeType)) {
+					in.position(headerSize + 2);
+					in.order(ByteOrder.LITTLE_ENDIAN);
+					// CharBuffer buffer = in.asCharBuffer();
+					Charset charset = null;
+					CharsetDecoder decoder = null;
+					charset = Charset.forName(message.encodeType);
+					decoder = charset.newDecoder();
+					String content = in.getString(decoder);
+					message.contentRecved = content.toCharArray();
+				} else {
+					// copy content
+					in.position(headerSize + 2);
+					in.order(ByteOrder.LITTLE_ENDIAN);
+					CharBuffer buffer = in.asCharBuffer();
+					char[] data = new char[contentSize / 2];
+					buffer.get(data, 0, contentSize / 2);
+					message.contentRecved = data;
+				}
 			}
 		}
 

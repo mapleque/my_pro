@@ -75,7 +75,8 @@ public abstract class AbstractTest {
 					port));// 建立连接
 			cf.awaitUninterruptibly();
 			(new StopThread(cf,this)).start();//启动用于结束程序的守护线程
-			(new TimeOutThread(this)).start();//用于监控超时的守护线程
+			if (this.timeout>0)
+				(new TimeOutThread(this)).start();//用于监控超时的守护线程
 		}
 	}
 	protected int finished=0;

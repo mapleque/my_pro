@@ -143,7 +143,7 @@ public class HttpRequestMessage extends HttpMessage {
 			case POST:
 				this.setHeader(
 						STRING_CONTENTLENGTH,
-						Integer.toString(content.toString().getBytes().length + 2));
+						Integer.toString(content.toString().getBytes().length));
 				if ("GBK".equals(encodeType))
 					this.setHeader(STRING_CONTENTTYPE,
 							STRING_CONTENTTYPE_GBKVALUE);
@@ -163,13 +163,13 @@ public class HttpRequestMessage extends HttpMessage {
 							STRING_CRLF);
 				}
 				str.append(STRING_CRLF);
-				str.append(content.toString()).append(STRING_CRLF);
+				str.append(content.toString());
 				outputMessage = str.toString();
 				break;
 			}
 		}
-		System.out.println();
-		System.out.println("Request format data");
+		System.err.println();
+		System.err.println("Request format data");
 		System.err.println("********************************");
 		System.err.println(outputMessage);
 		System.err.println("********************************");

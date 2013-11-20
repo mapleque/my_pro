@@ -7,29 +7,42 @@ import org.apache.mina.filter.codec.demux.MessageDecoderAdapter;
 import org.apache.mina.filter.codec.demux.MessageDecoderResult;
 
 public class HttpResponseDecoder extends MessageDecoderAdapter {
-	
+
 	@Override
 	public MessageDecoderResult decodable(IoSession session, IoBuffer in) {
 		// Return NEED_DATA if the whole header is not read yet.
 		MessageDecoderResult result;
 		try {
-			result = HttpRequestMessage.isMessageComplete(session, in) ? MessageDecoderResult.OK : MessageDecoderResult.NEED_DATA;
+			result = HttpRequestMessage.isMessageComplete(session, in) ? MessageDecoderResult.OK
+					: MessageDecoderResult.NEED_DATA;
 		} catch (Exception ex) {
 			ex.printStackTrace();
 			result = MessageDecoderResult.NOT_OK;
 		}
 		return result;
 	}
-	
+
 	@Override
 	public MessageDecoderResult decode(IoSession session, IoBuffer in,
 			ProtocolDecoderOutput out) throws Exception {
 		MessageDecoderResult result;
 		try {
-			int headerSize = (Integer) session.getAttribute(HttpMessage.SESSION_ATTR_HEADERSIZE);
-			int contentSize = (Integer) session.getAttribute(HttpMessage.SESSION_ATTR_CONTENTSIZE);
-			HttpResponseMessage message = HttpResponseMessage.decodeMessage(in,
-					headerSize, contentSize);
+			int headerSize = (Integer) session
+					.getAttribute(HttpMessage.SESSION_ATTR_HEADERSIZE);
+			boolean chunkedresponse = (Boolean) session
+					.getAttribute(HttpMessage.SESSION_ATTR_CHUNKEDTYPE);
+			int contentSize = (Integer) session
+					.getAttribute(HttpMessage.SESSION_ATTR_CONTENTSIZE);
+			HttpResponseMessage message = null;
+			String content = null;
+			try {
+				content = (String) session
+						.getAttribute(HttpMessage.SESSION_ATTR_CHUNKEDCONTENT);
+			} catch (Exception e) {
+				content = "";
+			}
+			message = HttpResponseMessage.decodeMessage(in, headerSize,
+					contentSize, chunkedresponse, content);
 			if (message != null) {
 				out.write(message);
 				session.removeAttribute(HttpMessage.SESSION_ATTR_HEADERSIZE);
@@ -44,5 +57,4 @@ public class HttpResponseDecoder extends MessageDecoderAdapter {
 		return result;
 	}
 
-	
 }

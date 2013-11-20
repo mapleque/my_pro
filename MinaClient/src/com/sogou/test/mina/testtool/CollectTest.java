@@ -1,20 +1,23 @@
 package com.sogou.test.mina.testtool;
 
+import java.util.HashMap;
+
 import com.sogou.test.mina.http.HttpResponseMessage;
 
 public class CollectTest extends AbstractTest {
 
 	public static void main(String[] args) {
-		String header="Connection:keep-alive&Host:zhihui.sogou.com&Cookie:zhihui-sfwsku-s=378ffRq1PJOeQUsA5G16v5vq8E1CPjONL/PDvuDIwLowXDdRihrL33yaulVf8+X65QBnFFqodLwNIOwRn5E16w==;zhihui-sfwsku-m=ZbZ5mOCUOMohqNayjuFFqhg0LepC6RSDBBRcF91KTw7vHbE117mY2rD2PI29ijbBaeZ6DoJZhC39wY67FyOqQJD5nvUR+pMiOuBAXP5FTCY=;";
-		args=("-c 1 -n 1 -p 80 -a 10.16.135.25 -u /mine/info -f format=json -h "+header).split(" ");
-		
-//		String form="token1=2%7C1384414065%7C0%7CbG9naW5pZDowOnx1c2VyaWQ6MjA6dGVzdDg4Nzc2NkBzb2dvdS5jb218c2VydmljZXVzZToyMDowMDEwMDAwMDAwMDAwMDAwMDAwMHxjcnQ6MTA6MjAxMy0xMS0xNHxlbXQ6MTowfGFwcGlkOjQ6MTEyMHx0cnVzdDoxOjF8cGFydG5lcmlkOjE6MHxyZWxhdGlvbjowOnx1dWlkOjE2OmI3NTI1ZWI2YjQxOTQ2MXN8dWlkOjE2OmI3NTI1ZWI2YjQxOTQ2MXN8dW5pcW5hbWU6MDp8&token2=Oj8_x_Oxt0uxEbkgpqZB-7HNpqu0t-2OTa36f99o53BsTwlUma7g8AeT0tv1VmJsYatV4b9PMvlmq5bS7uVX8Geem9Pnn9igmalC7z70MEivXDV1s2jDsSjDbi4SGKnjfBtlfqpaQjPfPKkzM7T3hHCmMtL4YYzHhHkOXlKwkW4&userid=test887766%40sogou.com&nickName=hehe&_method=get";
-//		String header="Connection:keep-alive&Host:zhihui.sogou.com";
-//		args=("-c 1 -n 1 -p 80 -a 10.16.135.25 -u /auth -m POST -f "+form+" -h "+header).split(" ");
-		
+//		 String
+//		 header="Connection:keep-alive&Host:zhihui.sogou.com&Cookie:zhihui-sfwsku-s=378ffRq1PJOeQUsA5G16v5vq8E1CPjONL/PDvuDIwLowXDdRihrL33yaulVf8+X65QBnFFqodLwNIOwRn5E16w==;zhihui-sfwsku-m=ZbZ5mOCUOMohqNayjuFFqhg0LepC6RSDBBRcF91KTw7vHbE117mY2rD2PI29ijbBaeZ6DoJZhC39wY67FyOqQJD5nvUR+pMiOuBAXP5FTCY=;";
+//		 args=("-t 0 -c 1 -n 100 -p 80 -a 10.16.135.25 -u /mine/info -f format=json -h "+header).split(" ");
+
+//		String form = "token1=2%7C1384414065%7C0%7CbG9naW5pZDowOnx1c2VyaWQ6MjA6dGVzdDg4Nzc2NkBzb2dvdS5jb218c2VydmljZXVzZToyMDowMDEwMDAwMDAwMDAwMDAwMDAwMHxjcnQ6MTA6MjAxMy0xMS0xNHxlbXQ6MTowfGFwcGlkOjQ6MTEyMHx0cnVzdDoxOjF8cGFydG5lcmlkOjE6MHxyZWxhdGlvbjowOnx1dWlkOjE2OmI3NTI1ZWI2YjQxOTQ2MXN8dWlkOjE2OmI3NTI1ZWI2YjQxOTQ2MXN8dW5pcW5hbWU6MDp8&token2=Oj8_x_Oxt0uxEbkgpqZB-7HNpqu0t-2OTa36f99o53BsTwlUma7g8AeT0tv1VmJsYatV4b9PMvlmq5bS7uVX8Geem9Pnn9igmalC7z70MEivXDV1s2jDsSjDbi4SGKnjfBtlfqpaQjPfPKkzM7T3hHCmMtL4YYzHhHkOXlKwkW4&userid=test887766%40sogou.com&nickName=hehe&_method=get";
+//		String header = "Connection:keep-alive&Host:zhihui.sogou.com";
+//		args = ("-c 1 -n 1 -p 80 -a 10.16.135.25 -u /auth -m POST -f " + form
+//				+ " -h " + header).split(" ");
+
 		(new CollectTest(args)).start();
 	}
-
 
 	public CollectTest(String[] args) {
 		this.dealArgs(args);
@@ -22,15 +25,26 @@ public class CollectTest extends AbstractTest {
 
 	@Override
 	public void onRecieved(HttpResponseMessage response) {
-		if (response==null){
+		System.err.println();
+		System.err.println("Response data:");
+		System.err.println("********************************");
+		if (response == null) {
 			System.err.println("null response");
-			return;
+		} else {
+			try {
+				System.err.println("Status");
+				System.err.println(response.getStatus());
+				System.err.println("Header:");
+				HashMap<String, String> header = response.getHeader();
+				for (String key : header.keySet())
+					System.err.println(key + ":" + header.get(key));
+				System.err.println("Content:");
+				System.err.println(response.getReplyContentRecved());
+			} catch (Exception e) {
+				System.err.println(response.getStatus());
+			}
 		}
-		try {
-			System.err.println(response.getReplyContentRecved());
-		} catch (Exception e) {
-			System.err.println(response.getStatus());
-		}
+		System.err.println("********************************");
 	}
 
 	@Override
@@ -79,7 +93,7 @@ public class CollectTest extends AbstractTest {
 		}
 		try {
 			for (int i = 0; i < args.length; i++) {
-				
+
 				if ("-c".equals(args[i])) {
 					// connector number
 					this.c = Integer.parseInt(args[i + 1]);
@@ -112,7 +126,7 @@ public class CollectTest extends AbstractTest {
 						this.header.put(d[0], d[1]);
 					}
 				}
-				
+
 				if ("-u".equals(args[i])) {
 					// sent URL
 					this.path = args[i + 1];
@@ -120,6 +134,10 @@ public class CollectTest extends AbstractTest {
 				if ("-m".equals(args[i])) {
 					// sent method
 					this.method = args[i + 1].toUpperCase();
+				}
+				if ("-t".equals(args[i])) {
+					// connector number
+					this.timeout = Integer.parseInt(args[i + 1]);
 				}
 			}
 			this.displayEnv();
@@ -146,6 +164,7 @@ public class CollectTest extends AbstractTest {
 		System.out.println("-u:sent path");
 		System.out.println("-m:sent method(POST or GET)");
 		System.out.println("-h:sent header with x-www-form-urlencoded");
+		System.out.println("-t:none recieve waiting time (ms)");
 		System.out.println();
 		System.out.println("Example:");
 		System.out
