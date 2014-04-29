@@ -5,7 +5,7 @@
 		return;
 	
 	var _randV=function(num){
-		return Math.floor(Math.random()*num);
+		return Math.floor(Math.random()*num)+1;
 	};
 	var init=function(conf){
 		console.log("游戏初始化");
@@ -34,8 +34,10 @@
 		}
 		var _self=this;
 		var tmp=_self.desk[x1][y1];
-		_self.des[x1][y1]=_self.desk[x2][y2];
+		_self.desk[x1][y1]=_self.desk[x2][y2];
 		_self.desk[x2][y2]=tmp;
+		if (typeof(_self.flush)=='function')_self.flush();
+		while (!check(_self));
 	};
 	var check=function(_self){
 		console.log("检查是否存在可消除元素");
@@ -48,6 +50,7 @@
 				(function(x,y,w,h){
 					x=parseInt(x);
 					y=parseInt(y);
+					//console.log("same beg:",x,y,w,h,samex,samey);
 					if (w&&desk[x+1]&&desk[x+1][y]&&desk[x+1][y]==desk[x][y]){
 						samex.push([x+1,y]);
 						arguments.callee(x+1,y,1,0);
@@ -56,6 +59,7 @@
 						samey.push([x,y+1]);
 						arguments.callee(x,y+1,0,1);
 					}
+					//console.log("same end:",x,y,w,h,samex,samey);
 				})(x,y,1,1);
 				if (samex.length>2&&samey.length>2){
 					//special bomb
@@ -84,12 +88,12 @@
 			console.log("当前元素下移",arr[i]);
 			var mx=arr[i][0];
 			var my=arr[i][1];
-			for (var y=my;y>0;y--){
-				console.log(_self.desk,mx,y);
-				_self.desk[mx][y]=_self.desk[mx][y-1];
+			for (var x=mx;x>0;x--){
+				console.log(_self.desk,x,my);
+				_self.desk[x][my]=_self.desk[x-1][my];
 			}
 			console.log("顶部添加新的元素");
-			_self.desk[mx][0]=_randV(_self.n);
+			_self.desk[0][my]=_randV(_self.n);
 		}
 		if (typeof(_self.flush)=='function')_self.flush();
 	};
