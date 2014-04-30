@@ -1,39 +1,40 @@
 #desk{
 	position:relative;
-	background:#ccc;
+	background:#ccc url(../images/background.png);
 	width:500px;
 	height:500px;
 }
 .cup{
 	position:relative;
 	display:inline-block;
-	width:40px;
-	height:40px;
-	background:#eee;
-	margin:5px;
+	width:48px;
+	height:48px;
+	margin:1px;
 }
 .ele{
 	position:relative;
 	display:inline-block;
-	width:36px;
-	height:36px;
-	border:solid 2px #eee;
+	width:48px;
+	height:48px;
 }
-.color-0{
-	background:red;
+.color--1{
+  background:black;
 }
 .color-1{
-	background:green;
+	background:url(../images/pumpkin.png); 
 }
 .color-2{
-	background:orange;
+	background:url(../images/egg-plant.png);
 }
 .color-3{
-	background:yellow;
+	background:url(../images/chilli.png);
 }
 .color-4{
-	background:blue;
+	background:url(../images/artichoke.png);
 }
 .color-5{
-	background:purple;
+	background:url(../images/carrot.png);
+}
+.color-6{
+	background:url(../images/leek.png);
 }

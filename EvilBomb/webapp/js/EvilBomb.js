@@ -23,8 +23,7 @@
 			}
 		}
 		if (typeof(_self.flush)=='function')_self.flush();
-		while (!check(_self));
-		//check(_self);
+    intervalCheck(_self);
 	};
 	var change=function(x1,y1,x2,y2){
 		console.log("交换两个元素的位置：",x1,y1,"<=>",x2,y2);
@@ -37,13 +36,21 @@
 		_self.desk[x1][y1]=_self.desk[x2][y2];
 		_self.desk[x2][y2]=tmp;
 		if (typeof(_self.flush)=='function')_self.flush();
-		while (!check(_self));
+    intervalCheck(_self);
 	};
-	var check=function(_self){
-		console.log("检查是否存在可消除元素");
+  var intervalCheck=function(_self){
+		if (_self===undefined)
+			_self=this;
+    var intervalPid=setInterval(function(){
+      if (check(_self,bomb)) clearInterval(intervalPid);
+    },1000);
+  };
+	var check=function(_self,bombfn){
+		console.log("检查是否存在可消除元素",this);
 		if (_self===undefined)
 			_self=this;
 		var desk=_self.desk;
+    //当前可消除的直接消除
 		for (var x in desk){
 			for (var y in desk[x]){
 				var samex=[[x,y]],samey=[[x,y]];
@@ -63,19 +70,20 @@
 				})(x,y,1,1);
 				if (samex.length>2&&samey.length>2){
 					//special bomb
-					bomb(samex.concat(samey),_self);
+					if (bombfn&&typeof(bombfn)=='function')bombfn(samex.concat(samey),_self);
 					return false;
 				}else if (samex.length>2){
-					bomb(samex,_self);
+					if (bombfn&&typeof(bombfn)=='function')bombfn(samex,_self);
 					return false;
 				}else if (samey.length>2){
-					bomb(samey,_self);
+					if (bombfn&&typeof(bombfn)=='function')bombfn(samey,_self);
 					return false;
 				}else{
 					//do nothing;
 				}
 			}
 		}
+    //当前无法继续消除，重新生成
 		return true;
 	};
 	

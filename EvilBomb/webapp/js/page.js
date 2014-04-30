@@ -12,7 +12,7 @@
 							+ '" class="cup" dropallow="">');
 					html.push('<div draggable="true" id="' + x +'%'+ y
 							+ '" class="ele color-' + eb.desk[x][y] + '">'
-							+ eb.desk[x][y] + '</div>');
+							+ '&nbsp;' + '</div>');
 					html.push('</div>');
 				}
 
